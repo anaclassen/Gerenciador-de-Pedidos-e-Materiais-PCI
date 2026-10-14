@@ -18,13 +18,10 @@ function getSheet() {
 // BUSCA O ESTOQUE NA PLANILHA EXTERNA PELO ID DO GOOGLE DRIVE
 // ======================================================
 // ======================================================
-// BUSCA O ESTOQUE APENAS NAS ABAS ESPECÍFICAS
+// BUSCA O ESTOQUE APENAS NAS ABAS ESPECÍFICAS (A PARTIR DA LINHA 3)
 // ======================================================
 // ======================================================
-// BUSCA O ESTOQUE NAS ABAS ESPECÍFICAS (A PARTIR DA LINHA 3)
-// ======================================================
-// ======================================================
-// BUSCA O ESTOQUE TRATANDO A COLUNA E PARA A ABA "PLACAS"
+// COLUNA "A" E "D" PARA A ABA "Brocas Fresa TTP" E "A" e "D" PARA AS DEMAIS
 // ======================================================
 function buscarEstoque() {
   try {
