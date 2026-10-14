@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Portal de PCIs e Materiais</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; padding-top: 2rem; padding-bottom: 3rem; }
+    .card { border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .badge-finalizado { background-color: #198754; color: #fff; }
+    .badge-agendado { background-color: #0d6efd; color: #fff; }
+    .badge-pendente { background-color: #ffc107; color: #000; }
+  </style>
+</head>
+<body>
+  <div class="container max-width-800">
+    <h2 class="text-center mb-4">Gerenciador de Pedidos e Materiais PCI</h2>
+
+    <!-- Menu de Navegação (3 Abas) -->
+    <ul class="nav nav-pills nav-justified mb-4" id="pills-tab" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active" id="tab-status" data-bs-toggle="pill" data-bs-target="#content-status">Consultar Status</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="tab-novo" data-bs-toggle="pill" data-bs-target="#content-novo">Novo Pedido</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="tab-estoque" data-bs-toggle="pill" data-bs-target="#content-estoque" onclick="carregarEstoque()">Estoque de Materiais</button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="pills-tabContent">
+      <!-- Aba 1: Consulta de Status -->
+      <div class="tab-pane fade show active" id="content-status">
+        <div class="card p-4 mb-4">
+          <form id="formBusca" onsubmit="event.preventDefault(); buscar();">
+            <div class="input-group">
+              <input type="text" id="campoBusca" class="form-control" placeholder="Digite o Nome do Aluno, E-mail ou Nº do Item (ex: 544)" required>
+              <button class="btn btn-primary" type="submit">Buscar</button>
+            </div>
+          </form>
+        </div>
+        <div id="loadingBusca" class="text-center d-none"><div class="spinner-border text-primary"></div></div>
+        <div id="resultadoBusca"></div>
+      </div>
+
+      <!-- Aba 2: Novo Pedido -->
+      <div class="tab-pane fade" id="content-novo">
+        <div class="card p-4">
+          <form id="formNovoPedido" onsubmit="event.preventDefault(); enviarPedido();">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Nome Completo do Aluno</label>
+                <input type="text" id="nomeAluno" class="form-control" required placeholder="Digite seu nome completo">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">E-mail do Aluno</label>
+                <input type="email" id="emailAluno" class="form-control" required placeholder="aluno@instituicao.edu.br">
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Nome e E-mail do Professor Autorizador</label>
+                <input type="text" id="emailProf" class="form-control" required placeholder="Prof. Nome - prof@instituicao.edu.br">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Projeto / Disciplina</label>
+                <input type="text" id="projeto" class="form-control" required placeholder="Ex: LEMA - Eletrônica Aplicada">
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Quantidade</label>
+                <input type="number" id="qtd" class="form-control" min="1" value="1" required>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">É Retrabalho?</label>
+                <select id="retrabalho" class="form-select" required>
+                  <option value="Não">Não</option>
+                  <option value="Sim">Sim</option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Largura (mm)</label>
+                <input type="number" id="largura" class="form-control" required placeholder="Ex: 50" step="0.1">
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Comprimento (mm)</label>
+                <input type="number" id="comprimento" class="form-control" required placeholder="Ex: 80" step="0.1">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Arquivos do Projeto (.ZIP)</label>
+                <input type="file" id="arquivoZip" class="form-control" accept=".zip" required>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Observações do Projeto</label>
+              <textarea id="observacoes" class="form-control" rows="2" placeholder="Informações adicionais, furações específicas ou detalhes sobre os componentes..."></textarea>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="btn btn-success w-100 mt-2">Enviar Solicitação</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Aba 3: Estoque de Materiais e Ferramentas -->
+      <div class="tab-pane fade" id="content-estoque">
+        <div class="card p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="m-0">Estoque do Laboratório</h4>
+            <input type="text" id="filtroEstoque" class="form-control w-50" placeholder="Filtrar item/ferramenta..." onkeyup="filtrarTabelaEstoque()">
+          </div>
+          <p class="text-muted small mb-4">Consulta atualizada dos materiais e ferramentas disponíveis na planilha de materiais do laboratório.</p>
+          
+          <div id="loadingEstoque" class="text-center my-3 d-none">
+            <div class="spinner-border text-primary"></div>
+            <p class="mt-2 text-muted">Carregando itens da planilha de materiais...</p>
+          </div>
+
+          <div id="containerEstoque" class="table-responsive"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let dadosEstoqueGlobal = [];
+
+    function carregarEstoque() {
+      if (dadosEstoqueGlobal.length > 0) return;
+
+      document.getElementById('loadingEstoque').classList.remove('d-none');
+      document.getElementById('containerEstoque').innerHTML = '';
+
+      google.script.run
+        .withSuccessHandler(exibirEstoque)
+        .withFailureHandler(erro => {
+          document.getElementById('loadingEstoque').classList.add('d-none');
+          document.getElementById('containerEstoque').innerHTML = `<div class="alert alert-danger">${erro.message}</div>`;
+        })
+        .buscarEstoque();
+    }
+
+    function exibirEstoque(itens) {
+      document.getElementById('loadingEstoque').classList.add('d-none');
+      dadosEstoqueGlobal = itens;
+      renderizarTabelaEstoque(itens);
+    }
+
+    function renderizarTabelaEstoque(itens) {
+      const container = document.getElementById('containerEstoque');
+
+      if (!itens || itens.length === 0) {
+        container.innerHTML = `<div class="alert alert-info">Nenhum item encontrado nas abas selecionadas.</div>`;
+        return;
+      }
+
+      let html = `
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Nome / Descrição</th>
+              <th>Tipo de Uso</th>
+              <th class="text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      itens.forEach(item => {
+        let badgeClass = 'bg-success';
+        if (item.status === 'Baixo') badgeClass = 'bg-warning text-dark';
+        if (item.status === 'Esgotado') badgeClass = 'bg-danger';
+
+        html += `
+          <tr>
+            <td>
+              <strong>${item.nome}</strong>
+              ${item.descricao !== '-' ? `<br><small class="text-muted">${item.descricao}</small>` : ''}
+            </td>
+            <td><small class="text-dark">${item.uso}</small></td>
+            <td class="text-center"><span class="badge ${badgeClass}">${item.status}</span></td>
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
+
+    function filtrarTabelaEstoque() {
+      const termo = document.getElementById('filtroEstoque').value.toLowerCase();
+      const filtrados = dadosEstoqueGlobal.filter(item => 
+        item.nome.toLowerCase().includes(termo) || 
+        item.uso.toLowerCase().includes(termo) ||
+        item.descricao.toLowerCase().includes(termo)
+      );
+      renderizarTabelaEstoque(filtrados);
+    }
+
+    function buscar() {
+      const termo = document.getElementById('campoBusca').value;
+      document.getElementById('loadingBusca').classList.remove('d-none');
+      document.getElementById('resultadoBusca').innerHTML = '';
+
+      google.script.run
+        .withSuccessHandler(exibirResultados)
+        .withFailureHandler(exibirErro)
+        .buscarSolicitacoes(termo);
+    }
+
+    function exibirResultados(lista) {
+      document.getElementById('loadingBusca').classList.add('d-none');
+      const container = document.getElementById('resultadoBusca');
+
+      if (!lista || lista.length === 0) {
+        container.innerHTML = `<div class="alert alert-warning">Nenhuma solicitação encontrada para o termo digitado.</div>`;
+        return;
+      }
+
+      let html = '';
+      lista.forEach(item => {
+        let classBadge = 'badge-pendente';
+        const st = (item.status || '').toString().toLowerCase();
+        if(st === 'finalizado') classBadge = 'badge-finalizado';
+        if(st === 'agendado') classBadge = 'badge-agendado';
+
+        html += `
+          <div class="card p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="m-0">Item nº ${item.item}</h5>
+              <span class="badge ${classBadge} p-2">${item.status}</span>
+            </div>
+            <p class="mb-1"><strong>Aluno Solicitante:</strong> ${item.nomeAluno} (${item.emailAluno})</p>
+            <p class="mb-1"><strong>Projeto:</strong> ${item.projeto}</p>
+            <p class="mb-1"><strong>Qtd:</strong> ${item.qtd} | <strong>Dimensões:</strong> ${item.largura} x ${item.comprimento} mm </p>
+            <p class="mb-1"><strong>Professor Autorizador:</strong> ${item.emailProfessor}</p>
+            
+            <hr class="my-2">
+            <small class="text-muted">
+              Data Agendamento: ${item.dataAgendada} | Máquina: ${item.maquina} | Técnico: ${item.tecnico}
+            </small>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function exibirErro(erro) {
+      document.getElementById('loadingBusca').classList.add('d-none');
+      document.getElementById('resultadoBusca').innerHTML = `<div class="alert alert-danger"><strong>Falha na busca:</strong> ${erro.message}</div>`;
+    }
+
+    function enviarPedido() {
+      const btn = document.getElementById('btnSubmit');
+      const fileInput = document.getElementById('arquivoZip');
+      
+      if (fileInput.files.length === 0) {
+        alert("Por favor, selecione o arquivo ZIP do projeto.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Enviando e salvando arquivo...';
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const payload = {
+          nomeAluno: document.getElementById('nomeAluno').value,
+          emailAluno: document.getElementById('emailAluno').value,
+          emailProf: document.getElementById('emailProf').value,
+          projeto: document.getElementById('projeto').value,
+          qtd: document.getElementById('qtd').value,
+          retrabalho: document.getElementById('retrabalho').value,
+          largura: document.getElementById('largura').value,
+          comprimento: document.getElementById('comprimento').value,
+          observacoes: document.getElementById('observacoes').value,
+          fileData: e.target.result,
+          fileName: file.name,
+          fileMimeType: file.type
+        };
+
+        google.script.run
+          .withSuccessHandler(res => {
+            alert(`Solicitação registrada com sucesso! Seu código é o Item nº ${res.item}`);
+            document.getElementById('formNovoPedido').reset();
+            btn.disabled = false;
+            btn.innerText = 'Enviar Solicitação';
+          })
+          .withFailureHandler(erro => {
+            alert(`Erro ao cadastrar: ${erro.message}`);
+            btn.disabled = false;
+            btn.innerText = 'Enviar Solicitação';
+          })
+          .cadastrarSolicitacao(payload);
+      };
+
+      reader.readAsDataURL(file);
+    }
+  </script>
+</body>
+</html>
