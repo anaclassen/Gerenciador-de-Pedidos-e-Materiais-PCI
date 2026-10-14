@@ -2,5 +2,6 @@
 A primeira aba é a Consultar Status, serve para consultar os status das solicitações de serviço. A pesquisa é feita através de nome, podendo ser parcial, e-mail ou nome do professor.
 A segunda aba é a Novo Pedido, em que pode ser feito o cadastro de uma nova solicitação de serviço. Vinculado a planilha de controle de serviços, adiciona nova linha quando incluído uma nova solicitação. Uso de classes como o form-select para incluir select de duas opções e form-control para incluir campo padrão de formulário, elemento type="email" para identificar o uso de @ no campo de e-mail, elemento type="file" para upload de arquivo e "required" para somente permitir envio após preenchimento completo de todos os campos.
 A terceira e última aba é o Estoque de Materiais, em que pode ser consultado os materiais disponívies para o serviço de produção de placas de circuito impresso através de máquinas fresadoras CNC.
+Uso de "try" em todas as etapas para indicar o tipo de erro em caso de falha.
 
 Em Código, na linha 31 entre " " colocar o ID da planilha google utilizada como consulta.
